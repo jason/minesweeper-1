@@ -6,30 +6,44 @@ class Minesweeper
 
   def initialize
     @board = build_board
-    # p @board
   end
 
   def build_board
     row = [nil] * NUM_ROWS
-    board = []
-    NUM_ROWS.times {board << row.dup}
+    @board = []
+    NUM_ROWS.times {@board << row.dup}
     NUM_ROWS.times do |row|
       NUM_ROWS.times do |col|
-        board[row][col] = Tile.new(0, false, false, false)
+        @board[row][col] = Tile.new(0, false, false, false, [])
       end
     end
-    board
+    fill_in_neighbors
+    @board
   end
 
-  # def build_board
-  #   board = Hash.new([0, nil])
-  #   cols = ("A".."I").to_a
-  #   NUM_ROWS.times do |row_num|
-  #     NUM_ROWS.times do |col_letter|
-  #     end
-  #   end
-  # end
+  def fill_in_neighbors
+    @board.each_with_index do |row, row_i|
+      row.each_with_index do |tile, col_i|
+        find_neighbors(row_i, col_i).each {|neighbor| tile.neighbors << neighbor}
+      end
+    end
+  end
 
+  def find_neighbors(row, col)
+    neighbors = []
+    ((row-1)..(row+1)).each do |neigh_row|
+      ((col-1)..(col+1)).each do |neigh_col|
+        if NUM_ROWS > neigh_row && neigh_row >= 0 
+          if NUM_ROWS > neigh_col && neigh_col >= 0
+            if neigh_row != row || neigh_col != col
+              neighbors << [neigh_row, neigh_col]
+            end
+          end
+        end
+      end
+    end
+    neighbors
+  end
 
 
   def play
@@ -58,14 +72,16 @@ class Minesweeper
 
   def valid?(action, row, col)
     return false unless action == 'R' || action =="F"
-    return false if @board[row][col].revealed || @board[row][col].flagged
+    return false unless row.match(/\d/) && COLUMN_NAMES.include?(col)
+    tile = @board[(row.to_i - 1)][COLUMN_NAMES.index(col)]
+    return false if tile.revealed || tile.flagged
     true
   end
 
   def get_move
     puts "What is your move (e.g. F1A)?"
     move = gets.chomp.upcase
-    parsed_move(move)
+    [move[0], move[1], move[2]]
   end
 
   def test_board
@@ -83,26 +99,19 @@ class Minesweeper
   end
 
   def calculate_neighbors
-    @board.each_with_index do |row, mine_row_i|
-      row.each_with_index do |mine_tile, mine_col_i|
-        if mine_tile.mine
-          adjust_neighbors(mine_row_i, mine_col_i)
-        end
-      end
-    end
-  end
-
-  def adjust_neighbors(mine_row, mine_col)
-    ((mine_row - 1)..(mine_row + 1)).each do |row|
-      ((mine_col - 1)..(mine_col + 1)).each do |col|
-        if NUM_ROWS > row && row >= 0 && NUM_ROWS > col && col >= 0
-          unless row == mine_row && col == mine_col
-            @board[row][col].neighbor_mines += 1
+    @board.each_with_index do |row, row_i|
+      row.each_with_index do |tile, col_i|
+        if tile.mine
+          tile.neighbors.each do |pos|
+            tile = @board[pos[0]][pos[1]]
+            tile.neighbor_mines += 1
           end
         end
       end
     end
   end
+
+
 
 
   def setup_board
@@ -135,12 +144,14 @@ class Minesweeper
 
 
   def evaluate_move(action, row, col)
+    tile = @board[(row.to_i-1)][COLUMN_NAMES.index(col)]
     if action == "F"
-      @board[row][col].flagged = true
-    elsif @board[row][col].mine
+      tile.flagged = true
+    elsif tile.mine
       return true
     else
-      @board[row][col].revealed = true
+      tile.revealed = true
+      adjust_revealed(tile)
     end
     false
   end
@@ -157,12 +168,20 @@ class Minesweeper
     true
   end
 
-  def parsed_move(move)
-    action = move[0]
-    row = (move[1].to_i - 1)
-    col = COLUMN_NAMES.index(move[2])
-    [action, row, col]
+  def adjust_revealed(tile)
+    if tile.neighbor_mines == 0
+      tile.neighbors.each do |pos|
+        neighbor = @board[pos[0]][pos[1]]
+        if neighbor.flagged
+          puts "do nothing"
+        else
+          neighbor.revealed = true
+          adjust_revealed(neighbor)
+        end
+      end
+    end
   end
+
 
   def generate_mines
     mines = 0
@@ -177,7 +196,7 @@ class Minesweeper
     end
   end
 
-  Tile = Struct.new(:neighbor_mines, :mine, :revealed, :flagged)
+  Tile = Struct.new(:neighbor_mines, :mine, :revealed, :flagged, :neighbors)
 
 
 end
