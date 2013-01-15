@@ -1,3 +1,6 @@
+# Brittany and Kriti
+# W2D2
+
 
 class Minesweeper
   NUM_ROWS = 9
@@ -7,6 +10,7 @@ class Minesweeper
   def initialize
     @board = build_board
   end
+
 
   def build_board
     row = [nil] * NUM_ROWS
@@ -36,7 +40,7 @@ class Minesweeper
         if NUM_ROWS > neigh_row && neigh_row >= 0 
           if NUM_ROWS > neigh_col && neigh_col >= 0
             if neigh_row != row || neigh_col != col
-              neighbors << [neigh_row, neigh_col]
+              neighbors << @board[neigh_row][neigh_col]
             end
           end
         end
@@ -49,7 +53,8 @@ class Minesweeper
   def play
     puts "Hey! Welcome to a new game of Minesweeper!"
     setup_board
-    test_board
+    # Uncomment line below to see the actual board with mines for testing
+    #test_board
     lost = false
 
     until lost
@@ -84,27 +89,27 @@ class Minesweeper
     [move[0], move[1], move[2]]
   end
 
-  def test_board
-    @board.each do |row|
-      row.each do |tile|
-        if tile.mine
-          print "M"
-        else
-          print " "
-        end
-        print tile.neighbor_mines
-      end
-      puts
-    end
-  end
+  # Uncomment the method below to see the actual board with mines for testing
+  # def test_board
+  #   @board.each do |row|
+  #     row.each do |tile|
+  #       if tile.mine
+  #         print "M"
+  #       else
+  #         print " "
+  #       end
+  #       print tile.neighbor_mines
+  #     end
+  #     puts
+  #   end
+  # end
 
   def calculate_neighbors
     @board.each_with_index do |row, row_i|
       row.each_with_index do |tile, col_i|
         if tile.mine
-          tile.neighbors.each do |pos|
-            tile = @board[pos[0]][pos[1]]
-            tile.neighbor_mines += 1
+          tile.neighbors.each do |neighbor|
+            neighbor.neighbor_mines += 1
           end
         end
       end
@@ -170,18 +175,14 @@ class Minesweeper
 
   def adjust_revealed(tile)
     if tile.neighbor_mines == 0
-      tile.neighbors.each do |pos|
-        neighbor = @board[pos[0]][pos[1]]
-        if neighbor.flagged
-          puts "do nothing"
-        else
-          neighbor.revealed = true
-          adjust_revealed(neighbor)
-        end
+      tile.neighbors.each do |neighbor|
+        next if neighbor.flagged
+        next if neighbor.revealed
+        neighbor.revealed = true
+        adjust_revealed(neighbor)
       end
     end
   end
-
 
   def generate_mines
     mines = 0
@@ -198,9 +199,11 @@ class Minesweeper
 
   Tile = Struct.new(:neighbor_mines, :mine, :revealed, :flagged, :neighbors)
 
-
 end
 
+# filename = ARGV[0]
+# if filename
+#   board = File.readlines(filename)
 game = Minesweeper.new
 game.play
 
