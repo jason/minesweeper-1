@@ -6,16 +6,19 @@ class Minesweeper
 
   def initialize
     @board = build_board
+    # p @board
   end
 
   def build_board
     row = [nil] * NUM_ROWS
-    board = [row] * NUM_ROWS
+    board = []
+    NUM_ROWS.times {board << row.dup}
     NUM_ROWS.times do |row|
       NUM_ROWS.times do |col|
         board[row][col] = Tile.new(0, false, false, false)
       end
     end
+    board
   end
 
   # def build_board
@@ -33,13 +36,13 @@ class Minesweeper
     puts "Hey! Welcome to a new game of Minesweeper!"
     setup_board
 
-    while true
-      print_board
-      move = get_move
-      if valid?(move)
-        evaluate_move(move)
-      end
-    end
+    # while true
+    print_board
+    #   move = get_move
+    #   if valid?(move)
+    #     evaluate_move(move)
+    #   end
+    # end
   end
 
   def get_move
@@ -60,7 +63,7 @@ class Minesweeper
   def adjust_neighbors(mine_row, mine_col)
     ((mine_row - 1)..(mine_row + 1)).each do |row|
       ((mine_col - 1)..(mine_col + 1)).each do |col|
-        if row >= 0 && col >= 0
+        if NUM_ROWS > row && row >= 0 && NUM_ROWS > col && col >= 0
           unless row == mine_row && col == mine_col
             @board[row][col].neighbor_mines += 1
           end
@@ -70,8 +73,6 @@ class Minesweeper
   end
 
 
-  end
-
   def setup_board
     generate_mines
     calculate_neighbors
@@ -79,22 +80,42 @@ class Minesweeper
 
 
   def print_board
+    puts "  #{COLUMN_NAMES.join(' ')}"
+    @board.each_with_index do |row, i|
+      print "#{i+1} "
+      row.each do |tile|
+        if tile.revealed
+          if tile.neighbor_mines == 0
+            print "  "
+          else
+            print tile.neighbor_mines
+            print " "
+          end
+        elsif tile.flagged
+          print "F "
+        else
+          print "* "
+        end
+      end
+      puts
+    end
   end
+
 
   def evaluate_move(move)
     if move[0] == "F"
       @flags << move[1..2]
-  end
-
-  def parse_move(move)
-    case move[0]
-    when "F"
-      @flags << move[1..2]
-    else
-      @reveals << move[1..2]
     end
-
   end
+
+  # def parse_move(move)
+  #   case move[0]
+  #   when "F"
+  #     @flags << move[1..2]
+  #   else
+  #     @reveals << move[1..2]
+  #   end
+  # end
 
   def generate_mines
     mines = 0
@@ -103,8 +124,9 @@ class Minesweeper
       col = rand(NUM_ROWS)
       tile = @board[row][col]
       unless tile.mine
-      tile.mine = true
-      mines+=1
+        tile.mine = true
+        mines += 1
+      end
     end
   end
 
@@ -113,4 +135,6 @@ class Minesweeper
 
 end
 
+game = Minesweeper.new
+game.play
 
