@@ -35,19 +35,51 @@ class Minesweeper
   def play
     puts "Hey! Welcome to a new game of Minesweeper!"
     setup_board
+    test_board
+    lost = false
 
-    # while true
-    print_board
-    #   move = get_move
-    #   if valid?(move)
-    #     evaluate_move(move)
-    #   end
-    # end
+    until lost
+      print_board
+      action, row, col = get_move
+      if valid?(action, row, col)
+        lost = evaluate_move(action, row, col)
+      else
+        puts "Invalid move"
+      end
+      break if game_won?
+    end
+
+    if lost
+      puts "Oh no, u hit a mine! loser."
+    else
+      puts "You won! You have successfully flagged all the mines"
+    end
+  end
+
+  def valid?(action, row, col)
+    return false unless action == 'R' || action =="F"
+    return false if @board[row][col].revealed || @board[row][col].flagged
+    true
   end
 
   def get_move
     puts "What is your move (e.g. F1A)?"
-    gets.chomp.upcase
+    move = gets.chomp.upcase
+    parsed_move(move)
+  end
+
+  def test_board
+    @board.each do |row|
+      row.each do |tile|
+        if tile.mine
+          print "M"
+        else
+          print " "
+        end
+        print tile.neighbor_mines
+      end
+      puts
+    end
   end
 
   def calculate_neighbors
@@ -102,20 +134,35 @@ class Minesweeper
   end
 
 
-  def evaluate_move(move)
-    if move[0] == "F"
-      @flags << move[1..2]
+  def evaluate_move(action, row, col)
+    if action == "F"
+      @board[row][col].flagged = true
+    elsif @board[row][col].mine
+      return true
+    else
+      @board[row][col].revealed = true
     end
+    false
   end
 
-  # def parse_move(move)
-  #   case move[0]
-  #   when "F"
-  #     @flags << move[1..2]
-  #   else
-  #     @reveals << move[1..2]
-  #   end
-  # end
+  def game_won?
+    NUM_ROWS.times do |row|
+      NUM_ROWS.times do |col|
+        tile = @board[row][col]
+        if tile.mine
+          return false unless tile.flagged
+        end
+      end
+    end
+    true
+  end
+
+  def parsed_move(move)
+    action = move[0]
+    row = (move[1].to_i - 1)
+    col = COLUMN_NAMES.index(move[2])
+    [action, row, col]
+  end
 
   def generate_mines
     mines = 0
