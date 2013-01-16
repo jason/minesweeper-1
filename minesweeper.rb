@@ -5,15 +5,20 @@ require 'yaml'
 class Minesweeper
   NUM_ROWS = 16
   NUM_MINES = 40
-  # column_names has to be changed every time num_rows is changed
-  COLUMN_NAMES = ("A".."P").to_a
+#JW - you probably know this, but these didn't have to be fixed, since you have 2 types of games - and 
+#could make it flexible for other types of boards.
+# column_names has to be changed every time num_rows is changed
+
+COLUMN_NAMES = ("A".."P").to_a
 
   def initialize
+  #can actually build board in the play function, no?
     build_board
   end
 
 
   def play
+  #jw - too friendly
     puts "Hey! Welcome to a new game of Minesweeper!"
     lost = false
 
@@ -31,6 +36,7 @@ class Minesweeper
     end
 
     if lost
+    #jw - too mean
       puts "Oh no, u hit a mine! loser."
     else
       puts "You won! You have successfully flagged all the mines"
@@ -121,6 +127,7 @@ class Minesweeper
   # end
 
   def fill_tile_neighbor_mines
+  #JW - better name?  neighbor mine count?
     @board.each_with_index do |row, row_i|
       row.each_with_index do |tile, col_i|
         if tile.mine
