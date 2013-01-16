@@ -1,6 +1,6 @@
 # Brittany and Kriti
 # W2D2
-
+require 'yaml'
 
 class Minesweeper
   NUM_ROWS = 9
@@ -8,27 +8,31 @@ class Minesweeper
   COLUMN_NAMES = ("A".."I").to_a
 
   def initialize
-    @board = build_board
+    build_board
+
   end
 
-
   def build_board
-    row = [nil] * NUM_ROWS
-    @board = []
-    NUM_ROWS.times {@board << row.dup}
-    NUM_ROWS.times do |row|
-      NUM_ROWS.times do |col|
-        @board[row][col] = Tile.new(0, false, false, false, [])
+    @board = empty_board
+    fill_in_neighbors
+    generate_mines
+    fill_in_neighbor_mines
+  end
+
+  def empty_board
+    Array.new(NUM_ROWS) do
+      Array.new(NUM_ROWS) do
+        Tile.new(0, false, false, false, [])
       end
     end
-    fill_in_neighbors
-    @board
   end
 
   def fill_in_neighbors
     @board.each_with_index do |row, row_i|
       row.each_with_index do |tile, col_i|
-        find_neighbors(row_i, col_i).each {|neighbor| tile.neighbors << neighbor}
+        find_neighbors(row_i, col_i).each do |neighbor|
+          tile.neighbors << neighbor
+        end
       end
     end
   end
@@ -52,7 +56,6 @@ class Minesweeper
 
   def play
     puts "Hey! Welcome to a new game of Minesweeper!"
-    setup_board
     # Uncomment line below to see the actual board with mines for testing
     #test_board
     lost = false
@@ -60,7 +63,9 @@ class Minesweeper
     until lost
       print_board
       action, row, col = get_move
-      if valid?(action, row, col)
+      if save?(action, row, col)
+        save_game(self)
+      elsif valid?(action, row, col)
         lost = evaluate_move(action, row, col)
       else
         puts "Invalid move"
@@ -75,6 +80,13 @@ class Minesweeper
     end
   end
 
+  def save?(action, row, col)
+    [action, row, col].join('') == "SAV"
+  end
+
+
+
+
   def valid?(action, row, col)
     return false unless action == 'R' || action =="F"
     return false unless row.match(/\d/) && COLUMN_NAMES.include?(col)
@@ -86,6 +98,7 @@ class Minesweeper
   def get_move
     puts "What is your move (e.g. F1A)?"
     move = gets.chomp.upcase
+
     [move[0], move[1], move[2]]
   end
 
@@ -104,7 +117,7 @@ class Minesweeper
   #   end
   # end
 
-  def calculate_neighbors
+  def fill_in_neighbor_mines
     @board.each_with_index do |row, row_i|
       row.each_with_index do |tile, col_i|
         if tile.mine
@@ -116,13 +129,6 @@ class Minesweeper
     end
   end
 
-
-
-
-  def setup_board
-    generate_mines
-    calculate_neighbors
-  end
 
 
   def print_board
@@ -201,9 +207,25 @@ class Minesweeper
 
 end
 
-# filename = ARGV[0]
-# if filename
-#   board = File.readlines(filename)
-game = Minesweeper.new
+
+puts "Do you want to load a saved game (y/n)?"
+if gets.chomp.downcase[0] == "y"
+  print "Enter the filename: "
+  filename = gets.chomp
+  string = File.read(filename).chomp
+  game = YAML::load(string)
+else
+  game = Minesweeper.new
+end
+
+def save_game(game)
+  print "Enter a new filename to save game in: "
+  filename = gets.chomp
+  File.open(filename, "w") {|f| f.puts game.to_yaml}
+end
+
 game.play
+
+
+
 
