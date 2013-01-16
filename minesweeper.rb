@@ -3,61 +3,18 @@
 require 'yaml'
 
 class Minesweeper
-  NUM_ROWS = 9
-  NUM_MINES = 10
-  COLUMN_NAMES = ("A".."I").to_a
+  NUM_ROWS = 16
+  NUM_MINES = 40
+  # column_names has to be changed every time num_rows is changed
+  COLUMN_NAMES = ("A".."P").to_a
 
   def initialize
     build_board
-
-  end
-
-  def build_board
-    @board = empty_board
-    fill_in_neighbors
-    generate_mines
-    fill_in_neighbor_mines
-  end
-
-  def empty_board
-    Array.new(NUM_ROWS) do
-      Array.new(NUM_ROWS) do
-        Tile.new(0, false, false, false, [])
-      end
-    end
-  end
-
-  def fill_in_neighbors
-    @board.each_with_index do |row, row_i|
-      row.each_with_index do |tile, col_i|
-        find_neighbors(row_i, col_i).each do |neighbor|
-          tile.neighbors << neighbor
-        end
-      end
-    end
-  end
-
-  def find_neighbors(row, col)
-    neighbors = []
-    ((row-1)..(row+1)).each do |neigh_row|
-      ((col-1)..(col+1)).each do |neigh_col|
-        if NUM_ROWS > neigh_row && neigh_row >= 0 
-          if NUM_ROWS > neigh_col && neigh_col >= 0
-            if neigh_row != row || neigh_col != col
-              neighbors << @board[neigh_row][neigh_col]
-            end
-          end
-        end
-      end
-    end
-    neighbors
   end
 
 
   def play
     puts "Hey! Welcome to a new game of Minesweeper!"
-    # Uncomment line below to see the actual board with mines for testing
-    #test_board
     lost = false
 
     until lost
@@ -80,11 +37,57 @@ class Minesweeper
     end
   end
 
+  private
+
   def save?(action, row, col)
     [action, row, col].join('') == "SAV"
   end
 
 
+  def build_board
+    @board = empty_board
+    fill_tile_neighbors
+    generate_mines
+    fill_tile_neighbor_mines
+  end
+
+  # Creates a new empty board of the predetermined size
+  def empty_board
+    Array.new(NUM_ROWS) do
+      Array.new(NUM_ROWS) do
+        Tile.new(0, false, false, false, [])
+      end
+    end
+  end
+
+  # Goes through each tile on the board and assigns its neighbors
+  def fill_tile_neighbors
+    @board.each_with_index do |row, row_i|
+      row.each_with_index do |tile, col_i|
+        find_neighbors(row_i, col_i).each do |neighbor|
+          tile.neighbors << neighbor
+        end
+      end
+    end
+  end
+
+  #goes through each spot one left/right and one up/down
+  #returns array of all spots that are valid
+  def find_neighbors(row, col)
+    neighbors = []
+    range = (0..(NUM_ROWS-1))
+
+    ((row-1)..(row+1)).each do |neigh_row|
+      ((col-1)..(col+1)).each do |neigh_col|
+        if range.include?(neigh_row) && range.include?(neigh_col)
+          if neigh_row != row || neigh_col != col
+            neighbors << @board[neigh_row][neigh_col]
+          end
+        end
+      end
+    end
+    neighbors
+  end
 
 
   def valid?(action, row, col)
@@ -99,7 +102,7 @@ class Minesweeper
     puts "What is your move (e.g. F1A)?"
     move = gets.chomp.upcase
 
-    [move[0], move[1], move[2]]
+    [move[0], move.match(/\d+/)[0], move[-1]]
   end
 
   # Uncomment the method below to see the actual board with mines for testing
@@ -117,7 +120,7 @@ class Minesweeper
   #   end
   # end
 
-  def fill_in_neighbor_mines
+  def fill_tile_neighbor_mines
     @board.each_with_index do |row, row_i|
       row.each_with_index do |tile, col_i|
         if tile.mine
@@ -132,9 +135,10 @@ class Minesweeper
 
 
   def print_board
-    puts "  #{COLUMN_NAMES.join(' ')}"
+    puts "   #{COLUMN_NAMES.join(' ')}"
     @board.each_with_index do |row, i|
-      print "#{i+1} "
+      print "#{i+1}  " if i < 9
+      print "#{i+1} " if i >= 9
       row.each do |tile|
         if tile.revealed
           if tile.neighbor_mines == 0
